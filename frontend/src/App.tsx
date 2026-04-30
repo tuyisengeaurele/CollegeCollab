@@ -116,3 +116,6 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+// Performance: all routes use React.lazy() for code splitting
+// TanStack Query handles background refetch and stale-while-revalidate caching
