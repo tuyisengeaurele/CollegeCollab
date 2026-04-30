@@ -7,13 +7,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, RadialBarChart, RadialBar, PieChart, Pie, Cell
+  ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { StatCard, Card } from '@/components/ui/Card';
 import { Badge, TaskStatusBadge } from '@/components/ui/Badge';
-import { Avatar } from '@/components/ui/Avatar';
-import { CardSkeleton } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/store/auth.store';
 import { tasksService } from '@/services/tasks.service';
 import { formatDate, getDueDateLabel } from '@/utils/format';

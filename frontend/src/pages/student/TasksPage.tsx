@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter, CheckSquare, Clock } from 'lucide-react';
+import { Search, Filter, CheckSquare, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge, TaskStatusBadge, PriorityBadge } from '@/components/ui/Badge';
 import { TaskCardSkeleton } from '@/components/ui/Skeleton';
 import { tasksService } from '@/services/tasks.service';
-import { formatDate, getDueDateLabel } from '@/utils/format';
+import { getDueDateLabel } from '@/utils/format';
 import type { Task, TaskStatus } from '@/types';
 
 const statusFilters: { label: string; value: TaskStatus | 'ALL' }[] = [

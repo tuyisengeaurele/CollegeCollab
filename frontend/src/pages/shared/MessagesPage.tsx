@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Search, MessageSquare, Plus } from 'lucide-react';
+import { Send, Search, Plus } from 'lucide-react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
