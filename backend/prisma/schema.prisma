@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  REVIEWED
+  COMPLETED
+  OVERDUE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SubmissionType {
+  FILE
+  TEXT
+  LINK
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  SUBMISSION_RECEIVED
+  GRADE_RELEASED
+  ANNOUNCEMENT
+  DEADLINE_REMINDER
+  MESSAGE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole @default(STUDENT)
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentProfile   StudentProfile?
+  lecturerProfile  LecturerProfile?
+  adminProfile     AdminProfile?
+  createdTasks     Task[]          @relation("TaskCreator")
+  submissions      Submission[]
+  grades           Grade[]         @relation("GradedBy")
+  sentMessages     Message[]       @relation("MessageSender")
+  receivedMessages Message[]       @relation("MessageReceiver")
+  notifications    Notification[]
+  announcements    Announcement[]
+  activityLogs     ActivityLog[]
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model StudentProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  studentId      String   @unique
+  enrollmentYear Int
+  gpa            Float?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollments    Enrollment[]
+}
+
+model LecturerProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  employeeId     String   @unique
+  title          String   @default("Mr.")
+  specialization String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courses        Course[]
+}
+
+model AdminProfile {
+  id       String @id @default(uuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  courses     Course[]
+}
+
+model Course {
+  id           String          @id @default(uuid())
+  name         String
+  code         String          @unique
+  description  String?         @db.Text
+  credits      Int             @default(3)
+  departmentId String
+  lecturerId   String
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  department   Department      @relation(fields: [departmentId], references: [id])
+  lecturer     LecturerProfile @relation(fields: [lecturerId], references: [id])
+  enrollments  Enrollment[]
+  tasks        Task[]
+  announcements Announcement[]
+  messages     Message[]
+
+  @@index([departmentId])
+  @@index([lecturerId])
+}
+
+model Enrollment {
+  id         String         @id @default(uuid())
+  studentId  String
+  courseId   String
+  enrolledAt DateTime       @default(now())
+  student    StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course     Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Task {
+  id            String       @id @default(uuid())
+  title         String
+  description   String       @db.Text
+  status        TaskStatus   @default(PENDING)
+  priority      TaskPriority @default(MEDIUM)
+  dueDate       DateTime
+  courseId      String
+  createdById   String
+  maxScore      Int?         @default(100)
+  attachmentUrl String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  course        Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy     User         @relation("TaskCreator", fields: [createdById], references: [id])
+  submissions   Submission[]
+
+  @@index([courseId])
+  @@index([createdById])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Submission {
+  id          String         @id @default(uuid())
+  taskId      String
+  studentId   String
+  type        SubmissionType
+  content     String?        @db.Text
+  fileUrl     String?
+  linkUrl     String?
+  submittedAt DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  task        Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student     User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  grade       Grade?
+
+  @@unique([taskId, studentId])
+  @@index([taskId])
+  @@index([studentId])
+}
+
+model Grade {
+  id           String     @id @default(uuid())
+  submissionId String     @unique
+  score        Float
+  maxScore     Float      @default(100)
+  feedback     String?    @db.Text
+  gradedById   String
+  gradedAt     DateTime   @default(now())
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  gradedBy     User       @relation("GradedBy", fields: [gradedById], references: [id])
+
+  @@index([submissionId])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String?
+  courseId   String?
+  content    String   @db.Text
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  sender     User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User?    @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+  course     Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([courseId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  read      Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.Text
+  courseId  String?
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([courseId])
+  @@index([authorId])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  resource  String
+  resourceId String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.Text
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
