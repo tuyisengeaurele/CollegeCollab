@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {
-  Users, CheckSquare, Clock, BarChart3, ArrowRight,
+  Users, CheckSquare, Clock, ArrowRight,
   BookOpen, TrendingUp, Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { StatCard, Card } from '@/components/ui/Card';
-import { Badge, TaskStatusBadge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/auth.store';
 
