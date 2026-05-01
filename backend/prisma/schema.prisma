@@ -262,7 +262,7 @@ model ActivityLog {
 
 model RefreshToken {
   id        String   @id @default(uuid())
-  token     String   @unique @db.Text
+  token     String   @unique @db.VarChar(512)
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
