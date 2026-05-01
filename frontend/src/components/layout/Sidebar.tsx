@@ -45,6 +45,7 @@ const adminNav: NavItem[] = [
   { label: 'Courses', href: '/admin/courses', icon: <BookOpen className="w-5 h-5" /> },
   { label: 'Departments', href: '/admin/departments', icon: <Building2 className="w-5 h-5" /> },
   { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
+  { label: 'Messages', href: '/admin/messages', icon: <MessageSquare className="w-5 h-5" /> },
   { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
@@ -67,9 +68,10 @@ export function Sidebar() {
       transition={{ duration: 0.25, type: 'spring', stiffness: 300, damping: 30 }}
       className="fixed left-0 top-0 h-full bg-white border-r border-[#E2E8F7] z-40 flex flex-col shadow-[2px_0_16px_0_rgba(30,80,162,0.06)] overflow-hidden"
     >
-      <div className={cn('flex items-center gap-3 px-4 py-5 border-b border-[#E2E8F7]', sidebarCollapsed && 'justify-center')}>
-        <div className="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">CC</span>
+      {/* Logo */}
+      <div className={cn('flex items-center gap-3 px-4 py-4 border-b border-[#E2E8F7]', sidebarCollapsed && 'justify-center')}>
+        <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
+          <img src="/logo.png" alt="CollegeCollab" className="w-full h-full object-contain" />
         </div>
         <AnimatePresence>
           {!sidebarCollapsed && (
