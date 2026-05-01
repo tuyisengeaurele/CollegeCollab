@@ -15,7 +15,7 @@ const schema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  role: z.enum(['STUDENT', 'LECTURER', 'ADMIN'] as const),
+  role: z.enum(['STUDENT'] as const),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, {
@@ -27,8 +27,6 @@ type FormData = z.infer<typeof schema>;
 
 const roleOptions = [
   { value: 'STUDENT', label: 'Student' },
-  { value: 'LECTURER', label: 'Lecturer' },
-  { value: 'ADMIN', label: 'Administrator' },
 ];
 
 export default function RegisterPage() {
