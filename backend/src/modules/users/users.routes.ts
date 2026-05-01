@@ -1,9 +1,10 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { prisma } from '../../utils/db';
 import { authenticate, authorize, AuthRequest } from '../../middleware/auth.middleware';
 import { sendSuccess, sendError, paginate } from '../../utils/response';
 
-const prisma = new PrismaClient();
+
 const router = Router();
 router.use(authenticate);
 
@@ -11,6 +12,33 @@ const userSelect = {
   id: true, email: true, firstName: true, lastName: true,
   role: true, avatar: true, isActive: true, createdAt: true,
 };
+
+router.post('/', authorize('ADMIN'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { firstName, lastName, email, password, role } = req.body;
+    if (!firstName || !lastName || !email || !password || !role) {
+      sendError(res, 'All fields are required', 400); return;
+    }
+    if (!['STUDENT', 'LECTURER', 'ADMIN'].includes(role)) {
+      sendError(res, 'Invalid role', 400); return;
+    }
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) { sendError(res, 'Email already in use', 409); return; }
+    const hashed = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: { firstName, lastName, email, password: hashed, role },
+      select: userSelect,
+    });
+    if (role === 'LECTURER') {
+      const empId = `LEC${Date.now().toString().slice(-6)}`;
+      await prisma.lecturerProfile.create({ data: { userId: user.id, employeeId: empId, title: 'Mr./Ms.' } });
+    } else if (role === 'STUDENT') {
+      const stdId = `STD${Date.now().toString().slice(-6)}`;
+      await prisma.studentProfile.create({ data: { userId: user.id, studentId: stdId, enrollmentYear: new Date().getFullYear() } });
+    }
+    sendSuccess(res, user, 'User created', 201);
+  } catch (err) { console.error(err); sendError(res, 'Failed to create user', 500); }
+});
 
 router.get('/', authorize('ADMIN'), async (req: AuthRequest, res: Response) => {
   try {

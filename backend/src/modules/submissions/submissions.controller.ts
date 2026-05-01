@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../utils/db';
 import { AuthRequest } from '../../middleware/auth.middleware';
 import { sendSuccess, sendError, paginate } from '../../utils/response';
 
-const prisma = new PrismaClient();
+
 
 const submissionSelect = {
   id: true, type: true, content: true, fileUrl: true, linkUrl: true,
@@ -100,6 +100,27 @@ export async function getSubmissionsByTask(req: AuthRequest, res: Response): Pro
     });
     sendSuccess(res, submissions);
   } catch {
+    sendError(res, 'Failed to fetch submissions', 500);
+  }
+}
+
+export async function getLecturerSubmissions(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { status, courseId, page = '1', limit = '20' } = req.query as Record<string, string>;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const profile = await prisma.lecturerProfile.findUnique({ where: { userId: req.user!.userId } });
+    if (!profile) { sendSuccess(res, paginate([], 0, 1, parseInt(limit))); return; }
+    const courses = await prisma.course.findMany({ where: { lecturerId: profile.id }, select: { id: true } });
+    const courseIds = courseId ? [courseId] : courses.map((c) => c.id);
+    const where: Record<string, unknown> = { task: { courseId: { in: courseIds } } };
+    if (status === 'ungraded') where.grade = null;
+    const [submissions, total] = await Promise.all([
+      prisma.submission.findMany({ where, select: submissionSelect, skip, take: parseInt(limit), orderBy: { submittedAt: 'desc' } }),
+      prisma.submission.count({ where }),
+    ]);
+    sendSuccess(res, paginate(submissions, total, parseInt(page), parseInt(limit)));
+  } catch (err) {
+    console.error(err);
     sendError(res, 'Failed to fetch submissions', 500);
   }
 }

@@ -1,9 +1,9 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../utils/db';
 import { authenticate, authorize, AuthRequest } from '../../middleware/auth.middleware';
 import { sendSuccess, sendError, paginate } from '../../utils/response';
 
-const prisma = new PrismaClient();
+
 const router = Router();
 router.use(authenticate);
 
@@ -56,16 +56,39 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
 
 router.post('/', authorize('ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
-    const { name, code, description, credits, departmentId, lecturerId } = req.body;
-    if (!name || !code || !departmentId || !lecturerId) {
+    const { name, code, description, credits, departmentId, lecturerUserId } = req.body;
+    if (!name || !code || !departmentId || !lecturerUserId) {
       sendError(res, 'Missing required fields', 400); return;
     }
+    const lecturerProfile = await prisma.lecturerProfile.findUnique({ where: { userId: lecturerUserId } });
+    if (!lecturerProfile) { sendError(res, 'Lecturer profile not found', 404); return; }
     const course = await prisma.course.create({
-      data: { name, code, description, credits: parseInt(credits) || 3, departmentId, lecturerId },
+      data: { name, code, description, credits: parseInt(credits) || 3, departmentId, lecturerId: lecturerProfile.id },
       select: courseSelect,
     });
     sendSuccess(res, course, 'Course created', 201);
   } catch { sendError(res, 'Failed to create course', 500); }
+});
+
+router.get('/:id/students', async (req: AuthRequest, res: Response) => {
+  try {
+    const enrollments = await prisma.enrollment.findMany({
+      where: { courseId: req.params.id },
+      select: {
+        id: true,
+        enrolledAt: true,
+        student: {
+          select: {
+            id: true,
+            studentId: true,
+            user: { select: { id: true, firstName: true, lastName: true, email: true, avatar: true } },
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'asc' },
+    });
+    sendSuccess(res, enrollments);
+  } catch { sendError(res, 'Failed to fetch students', 500); }
 });
 
 router.post('/:id/enroll', authorize('STUDENT'), async (req: AuthRequest, res: Response) => {

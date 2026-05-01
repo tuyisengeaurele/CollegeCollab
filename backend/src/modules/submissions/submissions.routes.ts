@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
-import { submitWork, getMySubmissions, getSubmissionsByTask, gradeSubmission } from './submissions.controller';
+import { submitWork, getMySubmissions, getSubmissionsByTask, getLecturerSubmissions, gradeSubmission } from './submissions.controller';
 import { config } from '../../config';
 
 const storage = multer.diskStorage({
@@ -19,6 +19,7 @@ router.use(authenticate);
 
 router.post('/', upload.single('file'), submitWork);
 router.get('/my', getMySubmissions);
+router.get('/lecturer', authorize('LECTURER', 'ADMIN'), getLecturerSubmissions);
 router.get('/task/:taskId', authorize('LECTURER', 'ADMIN'), getSubmissionsByTask);
 router.post('/:id/grade', authorize('LECTURER', 'ADMIN'), gradeSubmission);
 
