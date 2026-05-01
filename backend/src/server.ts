@@ -17,6 +17,10 @@ import submissionRoutes from './modules/submissions/submissions.routes';
 import notificationRoutes from './modules/notifications/notifications.routes';
 import courseRoutes from './modules/courses/courses.routes';
 import userRoutes from './modules/users/users.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
+import messagesRoutes from './modules/messages/messages.routes';
+import announcementsRoutes from './modules/announcements/announcements.routes';
+import departmentRoutes from './modules/departments/departments.routes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -74,6 +78,10 @@ app.use('/api/submissions', submissionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/announcements', announcementsRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

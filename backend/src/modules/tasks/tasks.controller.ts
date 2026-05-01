@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../utils/db';
 import { AuthRequest } from '../../middleware/auth.middleware';
 import { sendSuccess, sendError, paginate } from '../../utils/response';
 
-const prisma = new PrismaClient();
+
 
 const taskSelect = {
   id: true, title: true, description: true, status: true, priority: true,

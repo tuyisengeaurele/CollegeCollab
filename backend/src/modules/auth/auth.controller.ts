@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../utils/db';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../utils/jwt';
 import { sendSuccess, sendError } from '../../utils/response';
 import { config } from '../../config';
 
-const prisma = new PrismaClient();
+
 
 export async function register(req: Request, res: Response): Promise<void> {
   try {
