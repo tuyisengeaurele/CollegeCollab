@@ -6,7 +6,7 @@ import { sendSuccess, sendError, paginate } from '../../utils/response';
 
 
 const submissionSelect = {
-  id: true, type: true, content: true, fileUrl: true, linkUrl: true,
+  id: true, taskId: true, type: true, content: true, fileUrl: true, linkUrl: true,
   submittedAt: true, updatedAt: true,
   task: { select: { id: true, title: true, dueDate: true, maxScore: true } },
   student: { select: { id: true, firstName: true, lastName: true, email: true } },

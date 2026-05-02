@@ -78,7 +78,7 @@ export default function StudentSubmissionsPage() {
                 key={sub.id}
                 variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}
               >
-                <Link to={`/student/tasks/${sub.taskId}`}>
+                <Link to={`/student/tasks/${sub.task?.id || sub.taskId}`}>
                   <div className="bg-white rounded-2xl border border-[#E2E8F7] p-5 hover:border-[#1E50A2]/30 hover:shadow-sm transition-all">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">

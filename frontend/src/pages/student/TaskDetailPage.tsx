@@ -41,11 +41,14 @@ export default function TaskDetailPage() {
 
   const task = taskData?.data?.data;
   const mySubmissions: {
-    taskId: string; type: string; content?: string; linkUrl?: string;
+    taskId: string;
+    task?: { id: string };
+    type: string; content?: string; linkUrl?: string;
     fileUrl?: string; submittedAt: string;
     grade?: { score: number; maxScore: number; feedback?: string };
   }[] = subData?.data?.data?.data || [];
-  const mySubmission = mySubmissions.find((s) => s.taskId === id);
+  // match on taskId field (now returned by API) or task.id as fallback
+  const mySubmission = mySubmissions.find((s) => s.taskId === id || s.task?.id === id);
 
   const submitMutation = useMutation({
     mutationFn: () => {
@@ -258,14 +261,24 @@ export default function TaskDetailPage() {
           </Card>
         )}
 
-        {/* Past due, no submission */}
-        {isPastDue && !mySubmission ? (
+        {/* Graded — completely locked, no form */}
+        {isGraded ? (
+          <Card className="border-emerald-200 bg-emerald-50/50 text-center py-8">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+              <Award className="w-6 h-6 text-emerald-600" />
+            </div>
+            <p className="text-sm font-semibold text-emerald-800">This submission has been graded</p>
+            <p className="text-xs text-emerald-600 mt-1">No further submissions are accepted once a grade is released</p>
+          </Card>
+
+        ) : isPastDue && !mySubmission ? (
+          /* Past due, never submitted */
           <Card className="border-red-200 bg-red-50 text-center py-10">
             <Calendar className="w-10 h-10 text-red-400 mx-auto mb-3" />
             <p className="text-sm font-semibold text-red-600">Past due date</p>
             <p className="text-xs text-red-500 mt-1">This task no longer accepts submissions</p>
           </Card>
-        ) : !isGraded ? (
+        ) : (
           /* Submission form */
           <Card>
             <h3 className="font-semibold text-[#1A2744] mb-4">
@@ -375,7 +388,7 @@ export default function TaskDetailPage() {
               </Button>
             </div>
           </Card>
-        ) : null}
+        )}
       </motion.div>
     </DashboardLayout>
   );
