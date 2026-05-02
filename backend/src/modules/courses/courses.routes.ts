@@ -95,11 +95,30 @@ router.post('/:id/enroll', authorize('STUDENT'), async (req: AuthRequest, res: R
   try {
     const profile = await prisma.studentProfile.findUnique({ where: { userId: req.user!.userId } });
     if (!profile) { sendError(res, 'Student profile not found', 404); return; }
+    const course = await prisma.course.findUnique({ where: { id: req.params.id } });
+    if (!course) { sendError(res, 'Course not found', 404); return; }
+    const existing = await prisma.enrollment.findUnique({
+      where: { studentId_courseId: { studentId: profile.id, courseId: req.params.id } },
+    });
+    if (existing) { sendError(res, 'Already enrolled in this course', 409); return; }
     const enrollment = await prisma.enrollment.create({
       data: { studentId: profile.id, courseId: req.params.id },
     });
     sendSuccess(res, enrollment, 'Enrolled successfully', 201);
   } catch { sendError(res, 'Failed to enroll', 500); }
+});
+
+router.delete('/:id/unenroll', authorize('STUDENT'), async (req: AuthRequest, res: Response) => {
+  try {
+    const profile = await prisma.studentProfile.findUnique({ where: { userId: req.user!.userId } });
+    if (!profile) { sendError(res, 'Student profile not found', 404); return; }
+    const existing = await prisma.enrollment.findUnique({
+      where: { studentId_courseId: { studentId: profile.id, courseId: req.params.id } },
+    });
+    if (!existing) { sendError(res, 'Not enrolled in this course', 404); return; }
+    await prisma.enrollment.delete({ where: { id: existing.id } });
+    sendSuccess(res, null, 'Unenrolled successfully');
+  } catch { sendError(res, 'Failed to unenroll', 500); }
 });
 
 export default router;

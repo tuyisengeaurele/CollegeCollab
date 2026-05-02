@@ -8,5 +8,6 @@ export const coursesService = {
   update: (id: string, data: unknown) => api.put(`/courses/${id}`, data),
   delete: (id: string) => api.delete(`/courses/${id}`),
   enroll: (courseId: string) => api.post(`/courses/${courseId}/enroll`),
+  unenroll: (courseId: string) => api.delete(`/courses/${courseId}/unenroll`),
   getStudents: (courseId: string) => api.get(`/courses/${courseId}/students`),
 };

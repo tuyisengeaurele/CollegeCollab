@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Users, CheckSquare, Plus, Search } from 'lucide-react';
+import { BookOpen, Users, CheckSquare, Plus, Search, UserMinus, GraduationCap } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -8,6 +8,13 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { coursesService } from '@/services/courses.service';
+
+type Course = {
+  id: string; name: string; code: string; description?: string; credits: number;
+  department: { name: string };
+  lecturer: { user: { firstName: string; lastName: string } };
+  _count: { enrollments: number; tasks: number };
+};
 
 export default function StudentCoursesPage() {
   const queryClient = useQueryClient();
@@ -25,18 +32,36 @@ export default function StudentCoursesPage() {
     enabled: tab === 'browse',
   });
 
+  const [loadingCourse, setLoadingCourse] = useState<string | null>(null);
+
   const enrollMutation = useMutation({
-    mutationFn: (courseId: string) => coursesService.enroll(courseId),
+    mutationFn: (courseId: string) => { setLoadingCourse(courseId); return coursesService.enroll(courseId); },
     onSuccess: () => {
       toast.success('Enrolled successfully!');
+      setLoadingCourse(null);
+      void queryClient.invalidateQueries({ queryKey: ['courses', 'mine'] });
+      void queryClient.invalidateQueries({ queryKey: ['courses', 'all'] });
+      setTimeout(() => setTab('enrolled'), 600);
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      toast.error(err?.response?.data?.message || 'Enrollment failed');
+      setLoadingCourse(null);
+    },
+  });
+
+  const unenrollMutation = useMutation({
+    mutationFn: (courseId: string) => { setLoadingCourse(courseId); return coursesService.unenroll(courseId); },
+    onSuccess: () => {
+      toast.success('Dropped course successfully');
+      setLoadingCourse(null);
       void queryClient.invalidateQueries({ queryKey: ['courses', 'mine'] });
       void queryClient.invalidateQueries({ queryKey: ['courses', 'all'] });
     },
-    onError: () => toast.error('Already enrolled or enrollment failed'),
+    onError: () => { toast.error('Failed to drop course'); setLoadingCourse(null); },
   });
 
-  const enrolled: { id: string; name: string; code: string; description?: string; credits: number; department: { name: string }; lecturer: { user: { firstName: string; lastName: string } }; _count: { enrollments: number; tasks: number } }[] = mineData?.data?.data || [];
-  const allCourses: typeof enrolled = allData?.data?.data || [];
+  const enrolled: Course[] = mineData?.data?.data || [];
+  const allCourses: Course[] = allData?.data?.data || [];
   const enrolledIds = new Set(enrolled.map((c) => c.id));
   const available = allCourses.filter((c) => !enrolledIds.has(c.id));
 
@@ -81,6 +106,21 @@ export default function StudentCoursesPage() {
           </div>
         </div>
 
+        {tab === 'enrolled' && enrolled.length > 0 && (
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: 'Enrolled', value: enrolled.length },
+              { label: 'Total Credits', value: enrolled.reduce((s, c) => s + (c.credits || 0), 0) },
+              { label: 'Total Tasks', value: enrolled.reduce((s, c) => s + (c._count?.tasks || 0), 0) },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-white border border-[#E2E8F7] rounded-2xl p-4">
+                <p className="text-xs text-[#8896B3] mb-1">{stat.label}</p>
+                <p className="text-2xl font-bold text-[#1A2744]">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
@@ -93,9 +133,9 @@ export default function StudentCoursesPage() {
           </div>
         ) : filtered.length === 0 ? (
           <Card className="py-16 text-center">
-            <BookOpen className="w-12 h-12 text-[#C7D2EE] mx-auto mb-3" />
+            <GraduationCap className="w-12 h-12 text-[#C7D2EE] mx-auto mb-3" />
             <p className="text-[#4A5878] font-medium">
-              {tab === 'enrolled' ? 'Not enrolled in any courses yet' : 'No courses available'}
+              {tab === 'enrolled' ? 'Not enrolled in any courses yet' : 'No courses available to browse'}
             </p>
             {tab === 'enrolled' && (
               <p className="text-sm text-[#8896B3] mt-1">
@@ -121,6 +161,9 @@ export default function StudentCoursesPage() {
                       <BookOpen className="w-5 h-5 text-[#1E50A2]" />
                     </div>
                     <Badge variant="info" size="sm">{course.code}</Badge>
+                      {tab === 'enrolled' && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Enrolled</span>
+                      )}
                   </div>
                   <h3 className="font-semibold text-[#1A2744] mb-1">{course.name}</h3>
                   {course.description && (
@@ -128,7 +171,7 @@ export default function StudentCoursesPage() {
                   )}
                   <div className="mt-auto pt-3 border-t border-[#F0F4FF] space-y-2">
                     <p className="text-xs text-[#8896B3]">
-                      {course.department?.name} · {course.credits} credits
+                      {course.department?.name} Â· {course.credits} credits
                     </p>
                     <p className="text-xs text-[#4A5878]">
                       {course.lecturer?.user?.firstName} {course.lecturer?.user?.lastName}
@@ -138,15 +181,25 @@ export default function StudentCoursesPage() {
                         <span className="flex items-center gap-1"><Users className="w-3 h-3" />{course._count?.enrollments}</span>
                         <span className="flex items-center gap-1"><CheckSquare className="w-3 h-3" />{course._count?.tasks} tasks</span>
                       </div>
-                      {tab === 'browse' && (
+                      {tab === 'browse' ? (
                         <Button
                           size="xs"
                           leftIcon={<Plus className="w-3 h-3" />}
                           onClick={() => enrollMutation.mutate(course.id)}
-                          loading={enrollMutation.isPending}
+                          loading={loadingCourse === course.id}
+                          disabled={loadingCourse !== null && loadingCourse !== course.id}
                         >
                           Enroll
                         </Button>
+                      ) : (
+                        <button
+                          onClick={() => unenrollMutation.mutate(course.id)}
+                          disabled={loadingCourse !== null}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          <UserMinus className="w-3 h-3" />
+                          {loadingCourse === course.id ? 'Dropping...' : 'Drop'}
+                        </button>
                       )}
                     </div>
                   </div>
