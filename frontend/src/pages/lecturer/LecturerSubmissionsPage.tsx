@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Award, Filter } from 'lucide-react';
+import { Upload, Award, Paperclip, Download, ExternalLink, FileText } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -45,7 +45,7 @@ export default function LecturerSubmissionsPage() {
   });
 
   const submissions: {
-    id: string; type: string; content?: string; linkUrl?: string; submittedAt: string;
+    id: string; type: string; content?: string; linkUrl?: string; fileUrl?: string; submittedAt: string;
     task: { id: string; title: string; dueDate: string; maxScore: number };
     student: { id: string; firstName: string; lastName: string; email: string };
     grade?: { score: number; maxScore: number; feedback?: string };
@@ -109,9 +109,20 @@ export default function LecturerSubmissionsPage() {
                         {sub.student.firstName} {sub.student.lastName}
                       </p>
                       <p className="text-xs text-[#8896B3]">{sub.task.title}</p>
-                      {sub.content && <p className="text-xs text-[#4A5878] mt-1 line-clamp-2">{sub.content}</p>}
-                      {sub.linkUrl && (
-                        <a href={sub.linkUrl} target="_blank" rel="noreferrer" className="text-xs text-[#1E50A2] hover:underline mt-1 block truncate">{sub.linkUrl}</a>
+                      {sub.type === 'TEXT' && sub.content && (
+                        <p className="text-xs text-[#4A5878] mt-1 line-clamp-2 bg-[#F8FAFF] px-2 py-1 rounded-lg">{sub.content}</p>
+                      )}
+                      {sub.type === 'LINK' && sub.linkUrl && (
+                        <a href={sub.linkUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#1E50A2] hover:underline mt-1 truncate">
+                          <ExternalLink className="w-3 h-3 flex-shrink-0" />{sub.linkUrl}
+                        </a>
+                      )}
+                      {sub.type === 'FILE' && sub.fileUrl && (
+                        <a href={sub.fileUrl} target="_blank" rel="noreferrer" download className="flex items-center gap-1.5 text-xs text-[#1E50A2] hover:underline mt-1">
+                          <Paperclip className="w-3 h-3 flex-shrink-0" />
+                          {sub.fileUrl.split('/').pop()}
+                          <Download className="w-3 h-3 ml-1" />
+                        </a>
                       )}
                       <p className="text-xs text-[#8896B3] mt-1">Submitted {formatDate(new Date(sub.submittedAt))}</p>
                     </div>

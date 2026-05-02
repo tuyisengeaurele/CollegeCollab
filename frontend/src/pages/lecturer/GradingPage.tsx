@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Award, CheckCircle, ChevronLeft, ChevronRight, Paperclip, Link2, FileText, Download } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -35,7 +35,7 @@ export default function GradingPage() {
 
   const raw = data?.data?.data;
   const submissions: {
-    id: string; type: string; content?: string; linkUrl?: string; submittedAt: string;
+    id: string; type: string; content?: string; linkUrl?: string; fileUrl?: string; submittedAt: string;
     task: { id: string; title: string; maxScore: number };
     student: { id: string; firstName: string; lastName: string; email: string };
   }[] = raw?.data || [];
@@ -89,14 +89,37 @@ export default function GradingPage() {
                     </div>
 
                     {/* Submission content */}
-                    {(sub.content || sub.linkUrl) && (
-                      <div className="mb-4 p-4 bg-[#F8FAFF] rounded-xl border border-[#E2E8F7]">
-                        {sub.content && <p className="text-sm text-[#4A5878] whitespace-pre-wrap line-clamp-4">{sub.content}</p>}
-                        {sub.linkUrl && (
-                          <a href={sub.linkUrl} target="_blank" rel="noreferrer" className="text-sm text-[#1E50A2] hover:underline break-all">{sub.linkUrl}</a>
-                        )}
+                    <div className="mb-4 p-4 bg-[#F8FAFF] rounded-xl border border-[#E2E8F7]">
+                      <div className="flex items-center gap-2 mb-2">
+                        {sub.type === 'TEXT' && <FileText className="w-3.5 h-3.5 text-[#8896B3]" />}
+                        {sub.type === 'LINK' && <Link2 className="w-3.5 h-3.5 text-[#8896B3]" />}
+                        {sub.type === 'FILE' && <Paperclip className="w-3.5 h-3.5 text-[#8896B3]" />}
+                        <span className="text-xs font-medium text-[#8896B3] uppercase tracking-wide">{sub.type}</span>
                       </div>
-                    )}
+                      {sub.type === 'TEXT' && sub.content && (
+                        <p className="text-sm text-[#4A5878] whitespace-pre-wrap line-clamp-6">{sub.content}</p>
+                      )}
+                      {sub.type === 'LINK' && sub.linkUrl && (
+                        <a href={sub.linkUrl} target="_blank" rel="noreferrer" className="text-sm text-[#1E50A2] hover:underline break-all flex items-center gap-1.5">
+                          <Link2 className="w-4 h-4 flex-shrink-0" />{sub.linkUrl}
+                        </a>
+                      )}
+                      {sub.type === 'FILE' && sub.fileUrl && (
+                        <a href={sub.fileUrl} target="_blank" rel="noreferrer" download
+                          className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                          <div className="w-10 h-10 rounded-xl bg-[#1E50A2]/10 flex items-center justify-center flex-shrink-0">
+                            <Paperclip className="w-5 h-5 text-[#1E50A2]" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-[#1A2744]">{sub.fileUrl.split('/').pop()}</p>
+                            <p className="text-xs text-[#1E50A2] flex items-center gap-1"><Download className="w-3 h-3" />Click to download</p>
+                          </div>
+                        </a>
+                      )}
+                      {!sub.content && !sub.linkUrl && !sub.fileUrl && (
+                        <p className="text-sm text-[#8896B3] italic">No content</p>
+                      )}
+                    </div>
 
                     {/* Grade form */}
                     {!grading[sub.id] ? (
