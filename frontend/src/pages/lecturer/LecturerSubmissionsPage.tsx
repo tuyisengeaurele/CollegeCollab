@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, Award, Paperclip, Download, ExternalLink, FileText } from 'lucide-react';
+import { Upload, Award, Paperclip, Download, ExternalLink } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { DashboardLayout } from '@/layouts/DashboardLayout';

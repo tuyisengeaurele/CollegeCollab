@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Users, CheckSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { Card } from '@/components/ui/Card';
