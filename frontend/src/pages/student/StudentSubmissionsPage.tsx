@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Upload, Award, Clock, CheckCircle, Link2, FileText } from 'lucide-react';
+import { Upload, Award, Clock, CheckCircle, Link2, FileText, Paperclip } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -20,6 +20,7 @@ export default function StudentSubmissionsPage() {
     type: string;
     content?: string;
     linkUrl?: string;
+    fileUrl?: string;
     submittedAt: string;
     task: { id: string; title: string; dueDate: string; maxScore: number };
     grade?: { score: number; maxScore: number; feedback?: string };
@@ -82,7 +83,7 @@ export default function StudentSubmissionsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-[#1E50A2]/10 flex items-center justify-center flex-shrink-0">
-                          {sub.type === 'LINK' ? <Link2 className="w-4 h-4 text-[#1E50A2]" /> : <FileText className="w-4 h-4 text-[#1E50A2]" />}
+                          {sub.type === 'LINK' ? <Link2 className="w-4 h-4 text-[#1E50A2]" /> : sub.type === 'FILE' ? <Paperclip className="w-4 h-4 text-[#1E50A2]" /> : <FileText className="w-4 h-4 text-[#1E50A2]" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-[#1A2744] truncate">{sub.task.title}</p>
@@ -91,6 +92,9 @@ export default function StudentSubmissionsPage() {
                           )}
                           {sub.type === 'LINK' && sub.linkUrl && (
                             <p className="text-xs text-[#8896B3] truncate mt-0.5">{sub.linkUrl}</p>
+                          )}
+                          {sub.type === 'FILE' && sub.fileUrl && (
+                            <p className="text-xs text-[#8896B3] truncate mt-0.5">{sub.fileUrl.split('/').pop()}</p>
                           )}
                           <p className="text-xs text-[#8896B3] mt-1">Submitted {formatDate(new Date(sub.submittedAt))}</p>
                         </div>
