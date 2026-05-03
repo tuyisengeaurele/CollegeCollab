@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = 'CollegeCollab <noreply@collegecollab.rw>';
+// Use verified domain in production, Resend shared domain for testing
+const FROM = process.env.RESEND_FROM_EMAIL || 'CollegeCollab <onboarding@resend.dev>';
 
 export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
   await resend.emails.send({
