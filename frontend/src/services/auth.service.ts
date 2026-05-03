@@ -22,4 +22,7 @@ export const authService = {
 
   resetPassword: (token: string, password: string) =>
     api.post('/auth/reset-password', { token, password }),
+
+  updateProfile: (data: { firstName?: string; lastName?: string; email?: string; currentPassword?: string; newPassword?: string }) =>
+    api.put('/users/profile', data),
 };

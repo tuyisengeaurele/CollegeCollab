@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { prisma } from '../../utils/db';
 import { AuthRequest } from '../../middleware/auth.middleware';
 import { sendSuccess, sendError, paginate } from '../../utils/response';
+import { sendSubmissionNotification, sendGradeNotification } from '../../services/email.service';
+import { uploadToCloudinary } from '../../services/cloudinary.service';
 
 
 
@@ -16,7 +18,17 @@ const submissionSelect = {
 export async function submitWork(req: AuthRequest, res: Response): Promise<void> {
   try {
     const { taskId, type, content, linkUrl } = req.body;
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+
+    let fileUrl: string | undefined;
+    if (req.file) {
+      try {
+        fileUrl = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+      } catch (uploadErr) {
+        console.error('[Cloudinary] Upload failed:', uploadErr);
+        sendError(res, 'File upload failed', 500);
+        return;
+      }
+    }
 
     if (!taskId || !type) {
       sendError(res, 'Task ID and submission type are required', 400);
@@ -61,6 +73,22 @@ export async function submitWork(req: AuthRequest, res: Response): Promise<void>
             link: `/lecturer/submissions`,
           },
         });
+
+        // Send email notification to lecturer
+        try {
+          const student = await prisma.user.findUnique({ where: { id: req.user!.userId }, select: { firstName: true, lastName: true } });
+          const appUrl = process.env.FRONTEND_URL || '';
+          await sendSubmissionNotification(
+            course.lecturer.user.email,
+            `${course.lecturer.user.firstName} ${course.lecturer.user.lastName}`,
+            student ? `${student.firstName} ${student.lastName}` : 'A student',
+            task.title,
+            course.code,
+            appUrl,
+          );
+        } catch (emailErr) {
+          console.error('[SubmissionNotification] Email send failed:', emailErr);
+        }
       }
     }
 
@@ -148,6 +176,26 @@ export async function gradeSubmission(req: AuthRequest, res: Response): Promise<
         link: `/student/submissions`,
       },
     });
+
+    // Send email notification to student
+    try {
+      const task = await prisma.task.findUnique({ where: { id: submission.taskId }, select: { title: true } });
+      const student = await prisma.user.findUnique({ where: { id: submission.studentId }, select: { email: true, firstName: true, lastName: true } });
+      if (task && student) {
+        const appUrl = process.env.FRONTEND_URL || '';
+        await sendGradeNotification(
+          student.email,
+          `${student.firstName} ${student.lastName}`,
+          task.title,
+          parseFloat(score),
+          parseFloat(maxScore),
+          feedback || null,
+          appUrl,
+        );
+      }
+    } catch (emailErr) {
+      console.error('[GradeNotification] Email send failed:', emailErr);
+    }
 
     sendSuccess(res, grade, 'Grade saved');
   } catch (err) {

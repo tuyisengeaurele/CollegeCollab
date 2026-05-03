@@ -67,6 +67,35 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
   } catch { sendError(res, 'Failed to fetch user', 500); }
 });
 
+router.put('/profile', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const { firstName, lastName, email, currentPassword, newPassword } = req.body;
+
+    const current = await prisma.user.findUnique({ where: { id: userId } });
+    if (!current) { sendError(res, 'User not found', 404); return; }
+
+    const data: Record<string, unknown> = {};
+    if (firstName) data.firstName = firstName;
+    if (lastName) data.lastName = lastName;
+    if (email && email !== current.email) {
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) { sendError(res, 'Email already in use', 409); return; }
+      data.email = email;
+    }
+
+    if (newPassword) {
+      if (!currentPassword) { sendError(res, 'Current password is required', 400); return; }
+      const match = await bcrypt.compare(currentPassword, current.password);
+      if (!match) { sendError(res, 'Current password is incorrect', 400); return; }
+      data.password = await bcrypt.hash(newPassword, 12);
+    }
+
+    const user = await prisma.user.update({ where: { id: userId }, data, select: userSelect });
+    sendSuccess(res, user, 'Profile updated');
+  } catch (err) { console.error(err); sendError(res, 'Failed to update profile', 500); }
+});
+
 router.put('/:id/status', authorize('ADMIN'), async (req: AuthRequest, res: Response) => {
   try {
     const { isActive } = req.body;

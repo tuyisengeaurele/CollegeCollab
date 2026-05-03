@@ -66,10 +66,10 @@ export function Sidebar() {
     <motion.aside
       animate={{ width: sidebarCollapsed ? 72 : 260 }}
       transition={{ duration: 0.25, type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed left-0 top-0 h-full bg-white border-r border-[#E2E8F7] z-40 flex flex-col shadow-[2px_0_16px_0_rgba(30,80,162,0.06)] overflow-hidden"
+      className="fixed left-0 top-0 h-full bg-white border-r border-[#E2E8F7] z-40 flex flex-col shadow-[2px_0_16px_0_rgba(30,80,162,0.06)]"
     >
       {/* Logo */}
-      <div className={cn('flex items-center gap-3 px-4 py-4 border-b border-[#E2E8F7]', sidebarCollapsed && 'justify-center')}>
+      <div className={cn('flex items-center gap-3 px-4 py-4 border-b border-[#E2E8F7] overflow-hidden', sidebarCollapsed && 'justify-center')}>
         <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
           <img src="/logo.png" alt="CollegeCollab" className="w-full h-full object-contain" />
         </div>
@@ -87,7 +87,7 @@ export function Sidebar() {
         </AnimatePresence>
       </div>
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto scrollbar-hidden">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto overflow-x-hidden scrollbar-hidden">
         {navItems.map((item) => {
           const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
           return (
@@ -119,7 +119,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 border-t border-[#E2E8F7] space-y-1">
+      <div className="p-3 border-t border-[#E2E8F7] space-y-1 overflow-hidden">
         <button
           onClick={() => void logout()}
           title={sidebarCollapsed ? 'Logout' : undefined}
@@ -139,7 +139,14 @@ export function Sidebar() {
         </button>
 
         {user && (
-          <div className={cn('flex items-center gap-3 px-3 py-2', sidebarCollapsed && 'justify-center')}>
+          <Link
+            to="/profile"
+            title={sidebarCollapsed ? 'Profile Settings' : undefined}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 hover:bg-[#F0F4FF]',
+              sidebarCollapsed && 'justify-center'
+            )}
+          >
             <Avatar firstName={user.firstName} lastName={user.lastName} src={user.avatar} size="sm" />
             <AnimatePresence>
               {!sidebarCollapsed && (
@@ -149,7 +156,7 @@ export function Sidebar() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </Link>
         )}
       </div>
 

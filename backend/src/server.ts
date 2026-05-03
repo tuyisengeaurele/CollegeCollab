@@ -5,8 +5,6 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
-import path from 'path';
-import fs from 'fs';
 import { config } from './config';
 import { errorHandler, notFound } from './middleware/error.middleware';
 
@@ -58,10 +56,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Ensure upload dir exists
-const uploadDir = path.join(__dirname, '..', config.uploadDir);
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: config.frontendUrl, credentials: true }));
@@ -69,7 +63,6 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-app.use('/uploads', express.static(uploadDir));
 
 // Routes
 app.use('/api/auth', authRoutes);

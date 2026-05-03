@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { prisma } from '../../utils/db';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../utils/jwt';
 import { sendSuccess, sendError } from '../../utils/response';
 import { config } from '../../config';
+import { sendPasswordResetEmail } from '../../services/email.service';
 
 
 
@@ -69,7 +70,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: config.nodeEnv === 'production',
-      sameSite: 'strict',
+      sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -116,7 +117,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: config.nodeEnv === 'production',
-      sameSite: 'strict',
+      sameSite: config.nodeEnv === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -182,13 +183,58 @@ export async function getMe(req: Request & { user?: { userId: string } }, res: R
 export async function forgotPassword(req: Request, res: Response): Promise<void> {
   try {
     const { email } = req.body;
+    if (!email) { sendError(res, 'Email is required', 400); return; }
+
     const user = await prisma.user.findUnique({ where: { email } });
-    // Always respond with success to prevent email enumeration
-    sendSuccess(res, null, 'If that email is registered, a reset link has been sent');
-    if (!user) return;
-    // In production, send email with reset token
-    console.log(`[ForgotPassword] Token for ${email}: ${uuidv4()}`);
-  } catch {
+    // Always return success to prevent email enumeration
+    if (!user) { sendSuccess(res, null, 'If that email exists, a reset link has been sent'); return; }
+
+    // Invalidate old tokens
+    await prisma.passwordResetToken.updateMany({ where: { userId: user.id, used: false }, data: { used: true } });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await prisma.passwordResetToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+      },
+    });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    try {
+      await sendPasswordResetEmail(user.email, user.firstName, resetUrl);
+    } catch (emailErr) {
+      console.error('[ForgotPassword] Email send failed:', emailErr);
+    }
+
+    sendSuccess(res, null, 'If that email exists, a reset link has been sent');
+  } catch (err) {
+    console.error(err);
     sendError(res, 'Failed to process request', 500);
+  }
+}
+
+export async function resetPassword(req: Request, res: Response): Promise<void> {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) { sendError(res, 'Token and password are required', 400); return; }
+    if (password.length < 8) { sendError(res, 'Password must be at least 8 characters', 400); return; }
+
+    const record = await prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!record || record.used || record.expiresAt < new Date()) {
+      sendError(res, 'Invalid or expired reset token', 400); return;
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+    await prisma.user.update({ where: { id: record.userId }, data: { password: hashed } });
+    await prisma.passwordResetToken.update({ where: { id: record.id }, data: { used: true } });
+    // Invalidate all refresh tokens
+    await prisma.refreshToken.deleteMany({ where: { userId: record.userId } });
+
+    sendSuccess(res, null, 'Password reset successfully');
+  } catch (err) {
+    console.error(err);
+    sendError(res, 'Password reset failed', 500);
   }
 }

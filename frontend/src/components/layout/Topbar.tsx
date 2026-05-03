@@ -7,15 +7,18 @@ import { Avatar } from '@/components/ui/Avatar';
 
 export function Topbar() {
   const { user } = useAuthStore();
-  const { toggleSidebar, toggleNotificationPanel } = useUIStore();
+  const { toggleSidebar, toggleNotificationPanel, sidebarCollapsed } = useUIStore();
   const { unreadCount } = useNotifications();
 
   return (
-    <header className="h-16 bg-white border-b border-[#E2E8F7] flex items-center justify-between px-6 fixed top-0 right-0 left-0 z-30 shadow-[0_2px_8px_0_rgba(30,80,162,0.04)]">
+    <motion.header
+      animate={{ left: sidebarCollapsed ? 72 : 260 }}
+      transition={{ duration: 0.25, type: 'spring', stiffness: 300, damping: 30 }}
+      className="h-16 bg-white border-b border-[#E2E8F7] flex items-center justify-between px-6 fixed top-0 right-0 z-30 shadow-[0_2px_8px_0_rgba(30,80,162,0.04)]">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-[#8896B3] hover:bg-[#F0F4FF] hover:text-[#1A2744] transition-colors lg:hidden"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-[#8896B3] hover:bg-[#F0F4FF] hover:text-[#1A2744] transition-colors"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -60,6 +63,6 @@ export function Topbar() {
           </div>
         )}
       </div>
-    </header>
+    </motion.header>
   );
 }

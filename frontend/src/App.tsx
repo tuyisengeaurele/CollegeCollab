@@ -9,11 +9,13 @@ import { useAuthStore } from '@/store/auth.store';
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 
 // Shared
 const MessagesPage = lazy(() => import('@/pages/shared/MessagesPage'));
 const CalendarPage = lazy(() => import('@/pages/shared/CalendarPage'));
 const ContactPage = lazy(() => import('@/pages/shared/ContactPage'));
+const ProfilePage = lazy(() => import('@/pages/shared/ProfilePage'));
 
 // Student
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'));
@@ -75,6 +77,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
             {/* Student routes */}
@@ -124,6 +127,13 @@ export default function App() {
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="dashboard" replace />} />
                 </Routes>
+              </ProtectedRoute>
+            } />
+
+            {/* Profile — accessible to all authenticated roles */}
+            <Route path="/profile" element={
+              <ProtectedRoute allowedRoles={['STUDENT', 'LECTURER', 'ADMIN']}>
+                <ProfilePage />
               </ProtectedRoute>
             } />
 

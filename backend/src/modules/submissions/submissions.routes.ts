@@ -1,18 +1,19 @@
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { submitWork, getMySubmissions, getSubmissionsByTask, getLecturerSubmissions, gradeSubmission } from './submissions.controller';
-import { config } from '../../config';
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, config.uploadDir),
-  filename: (_req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg','image/png','image/gif','application/pdf','application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain','application/zip'];
+    cb(null, allowed.includes(file.mimetype));
   },
 });
-const upload = multer({ storage, limits: { fileSize: config.maxFileSize } });
 
 const router = Router();
 router.use(authenticate);
